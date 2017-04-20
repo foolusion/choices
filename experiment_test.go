@@ -234,7 +234,7 @@ func TestToExperiment(t *testing.T) {
 		},
 	}
 	for tname, test := range tests {
-		out := test.e.ToExperiment()
+		out := test.e.ToExperiment(nil)
 		if out.Name != test.want.Name {
 			t.Fatalf("%s: e.ToExperiment() = %v, want %v", tname, *out, test.want)
 		}

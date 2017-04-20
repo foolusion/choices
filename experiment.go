@@ -50,19 +50,24 @@ func NewExperiment(name string) *Experiment {
 }
 
 // ToExperiment is a helper function that converts an Experiment into
-// a *storage.Experiment.
-func (e *Experiment) ToExperiment() *storage.Experiment {
-	exp := &storage.Experiment{
-		Id:        e.ID,
-		Name:      e.Name,
-		Namespace: e.Namespace,
-		Labels:    e.Labels,
-		Params:    make([]*storage.Param, len(e.Params)),
-		Segments:  e.Segments.ToSegments(),
+// a *storage.Experiment. It will overwrite the provided
+// *storage.Experiment or create a new one if it is nil
+func (e *Experiment) ToExperiment(exp *storage.Experiment) *storage.Experiment {
+	if exp == nil {
+		exp = new(storage.Experiment)
 	}
 
+	exp.Id = e.ID
+	exp.Name = e.Name
+	exp.Namespace = e.Namespace
+	exp.Labels = e.Labels
+	exp.Segments = e.Segments.ToSegments(exp.Segments)
+
+	if exp.Params == nil || len(e.Params) != len(exp.Params) {
+		exp.Params = make([]*storage.Param, len(e.Params))
+	}
 	for i, p := range e.Params {
-		exp.Params[i] = p.ToParam()
+		exp.Params[i] = p.ToParam(exp.Params[i])
 	}
 	return exp
 }
@@ -121,15 +126,18 @@ type Param struct {
 
 // ToParam is a helper function that converts a Param into a
 // *storage.Param.
-func (p *Param) ToParam() *storage.Param {
-	param := &storage.Param{
-		Name: p.Name,
+func (p *Param) ToParam(param *storage.Param) *storage.Param {
+	if param == nil {
+		param = new(storage.Param)
+	}
+	param.Name = p.Name
+
+	if param.Value == nil {
+		param.Value = new(storage.Value)
 	}
 	switch val := p.Choices.(type) {
 	case *Uniform:
-		param.Value = &storage.Value{
-			Choices: val.Choices,
-		}
+		param.Value.Choices = val.Choices
 	case *Weighted:
 		c := make([]string, len(val.Choices))
 		weights := make([]float64, len(val.Choices))
@@ -137,10 +145,8 @@ func (p *Param) ToParam() *storage.Param {
 			c[i] = v.name
 			weights[i] = v.weight
 		}
-		param.Value = &storage.Value{
-			Choices: c,
-			Weights: weights,
-		}
+		param.Value.Choices = c
+		param.Value.Weights = weights
 	}
 	return param
 }
