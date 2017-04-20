@@ -74,32 +74,40 @@ func (e *Experiment) ToExperiment(exp *storage.Experiment) *storage.Experiment {
 
 // eval evaluates the experiment based on the given hashConfig. It
 // returns a []ParamValue of the evaluated params or an error.
-func (e *Experiment) eval(h hashConfig) (ExperimentResponse, error) {
+func (e *Experiment) eval(er *ExperimentResponse, h hashConfig) error {
 	h.salt[1] = e.Namespace
 	i, err := hash(h)
 	if err != nil {
-		return ExperimentResponse{}, err
+		return err
 	}
 	segment := uniform(i, 0, float64(e.Segments.len))
 	if !e.Segments.isClaimed(uint64(segment)) {
-		return ExperimentResponse{}, ErrSegmentNotInExperiment
+		return ErrSegmentNotInExperiment
 	}
 
-	p := make([]ParamValue, len(e.Params))
+	if er == nil {
+		er = new(ExperimentResponse)
+		er.Params = make([]*ParamValue, len(e.Params))
+	} else if er.Params == nil {
+		er.Params = make([]*ParamValue, len(e.Params))
+	}
 	h.salt[2] = e.Name
 	for i, param := range e.Params {
-		par, err := param.eval(h)
-		if err != nil {
-			return ExperimentResponse{}, err
+		if er.Params[i] == nil {
+			er.Params[i] = new(ParamValue)
 		}
-		p[i] = par
+		err := param.eval(er.Params[i], h)
+		if err != nil {
+			return err
+		}
 	}
-	return ExperimentResponse{
-		Name:      e.Name,
-		Namespace: e.Namespace,
-		Params:    p,
-		Labels:    e.Labels,
-	}, nil
+
+	if len(er.Params) > len(e.Params) {
+		er.Params = er.Params[:len(e.Params)]
+	}
+	er.Name = e.Name
+	er.Namespace = e.Namespace
+	return nil
 }
 
 // MarshalJSON implements the json.Marshaler interface for
@@ -165,24 +173,28 @@ func (p *Param) MarshalJSON() ([]byte, error) {
 
 // eval evaluates the Param based on the given hashConfig. It returns
 // a ParamValue containing the value the user is assigned.
-func (p *Param) eval(h hashConfig) (ParamValue, error) {
+func (p *Param) eval(ep *ParamValue, h hashConfig) error {
+	if ep == nil {
+		return errors.New("param value is nil")
+	}
 	h.setParam(p.Name)
 	i, err := hash(h)
 	if err != nil {
-		return ParamValue{}, err
+		return err
 	}
 	val, err := p.Choices.Choice(i)
 	if err != nil {
-		return ParamValue{}, err
+		return err
 	}
-	return ParamValue{Name: p.Name, Value: val}, nil
+	*ep = ParamValue{Name: p.Name, Value: val}
+	return nil
 }
 
 // ExperimentResponse holds the data for an evaluated experiment.
 type ExperimentResponse struct {
 	Name      string
 	Namespace string
-	Params    []ParamValue
+	Params    []*ParamValue
 	Labels    map[string]string
 }
 
@@ -195,23 +207,33 @@ type ParamValue struct {
 
 // Experiments determines the assignments for the a given user's id
 // based on the current set of namespaces and experiments. It returns
-// a []ExperimentResponse if it is successful or an error if something
-// went wrong.
-func (c *Config) Experiments(userID string, selector labels.Selector) ([]ExperimentResponse, error) {
+// a []*ExperimentResponse if it is successful or an error if
+// something went wrong.
+func (c *Config) Experiments(out []*ExperimentResponse, userID string, selector labels.Selector) ([]*ExperimentResponse, error) {
 	var h hashConfig
 	h.setUserID(userID)
-
-	matched := teamNamespaces(c.storage, selector)
-	response := make([]ExperimentResponse, 0, len(matched))
-	for i := range matched {
-		eResp, err := matched[i].eval(h)
+	experiments := c.storage.read()
+	if out == nil {
+		out = make([]*ExperimentResponse, len(experiments))
+	} else {
+		out = out[:len(experiments)]
+	}
+	erindex := 0
+	for i := range experiments {
+		if !selector.Matches(experiments[i].Labels) {
+			continue
+		}
+		if out[erindex] == nil {
+			out[erindex] = new(ExperimentResponse)
+		}
+		err := experiments[i].eval(out[erindex], h)
 		if err == ErrSegmentNotInExperiment {
 			continue
 		}
 		if err != nil {
 			return nil, err
 		}
-		response = append(response, eResp)
+		erindex++
 	}
-	return response, nil
+	return out, nil
 }
