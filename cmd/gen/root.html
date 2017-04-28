@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Gen</title>
+</head>
+
+<body>
+  <table>
+    <thead>
+      <tr>
+        <th>Experiment Name</th>
+        <th>Param Name</th>
+        <th>Param Value</th>
+        <th>Team</th>
+        <th>Platform</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{- range $i, $x := . }}
+      <tr>
+        <td><a href="/experiment/{{ $x.ExperimentName }}/param/{{ $x.ParamName }}/value/{{ $x.ParamValue }}">{{ $x.DetailName }} ({{ $x.ExperimentName }})</a></td>
+        <td><a href="/experiment/{{ $x.ExperimentName }}/param/{{ $x.ParamName }}/value/{{ $x.ParamValue }}">{{ $x.ParamName }}</a></td>
+        <td><a href="/experiment/{{ $x.ExperimentName }}/param/{{ $x.ParamName }}/value/{{ $x.ParamValue }}">{{ $x.ParamValue }}</a></td>
+        <td>{{ $x.Team }}</td>
+        <td>{{ $x.Platform }}</td>
+      </tr>
+      {{- end }}
+  </table>
+</body>
+
+</html>
