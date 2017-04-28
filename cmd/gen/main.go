@@ -1,8 +1,8 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net"
 	"net/http"
@@ -25,54 +25,47 @@ type server struct {
 }
 
 func (s *server) root(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	resp, err := s.sc.List(context.TODO(), &storage.ListRequest{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	type data struct {
-		DetailName, ExperimentName, ParamName, ParamValue, Team, Platform string
-	}
-	var out []data
-	for _, e := range resp.Experiments {
-		for _, p := range e.Params {
-			for _, c := range p.Value.Choices {
-				d := data{
-					DetailName:     e.DetailName,
-					ExperimentName: e.Name,
-					ParamName:      p.Name,
-					ParamValue:     c,
-					Team:           e.Labels["team"],
-					Platform:       e.Labels["platform"],
-				}
-				out = append(out, d)
-			}
-		}
-	}
-	if err := rootTmpl.Execute(w, out); err != nil {
+	enc := json.NewEncoder(w)
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if err := enc.Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 }
-
-var rootTmpl = template.Must(template.ParseFiles("root.html"))
 
 var epvRe = regexp.MustCompile("/experiment/(.*)/param/(.*)/value/(.*)")
 
 func (s *server) value(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	matches := epvRe.FindStringSubmatch(r.URL.Path)
 	log.Println(matches)
 	for i := 0; i < 1000000; i++ {
-		resp, err := s.ec.Get(context.TODO(), &elwin.GetRequest{
-			UserID: strconv.Itoa(i),
+		getResp, err := s.sc.Get(context.TODO(), &storage.GetRequest{
+			Id: matches[1],
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		for _, e := range resp.Experiments {
+		evalResp, err := s.ec.Eval(context.TODO(), &elwin.EvalRequest{
+			UserID:      strconv.Itoa(i),
+			Experiments: []*storage.Experiment{getResp.Experiment},
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		for _, e := range evalResp.Experiments {
 			for _, p := range e.Params {
-				if e.Name == matches[1] && p.Name == matches[2] && p.Value == matches[3] {
+				if p.Name == matches[2] && p.Value == matches[3] {
+					w.Header().Set("Content-Type", "application/json; charset=utf-8")
 					fmt.Fprintf(w, "%d", i)
 					return
 				}

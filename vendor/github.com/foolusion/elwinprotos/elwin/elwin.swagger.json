@@ -15,14 +15,14 @@
     "application/json"
   ],
   "paths": {
-    "/elwin/v1/experiments": {
+    "/elwin/v1/eval": {
       "post": {
-        "operationId": "Get",
+        "operationId": "Eval",
         "responses": {
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/apiGetReply"
+              "$ref": "#/definitions/apiEvalReply"
             }
           }
         },
@@ -32,7 +32,33 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/apiGetRequest"
+              "$ref": "#/definitions/apiEvalRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Elwin"
+        ]
+      }
+    },
+    "/elwin/v1/experiments": {
+      "post": {
+        "operationId": "Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/elwinapiGetReply"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/elwinapiGetRequest"
             }
           }
         ],
@@ -43,25 +69,27 @@
     }
   },
   "definitions": {
-    "apiExperiment": {
+    "apiEvalReply": {
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "params": {
+        "experiments": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/apiParam"
+            "$ref": "#/definitions/elwinapiExperiment"
           }
+        }
+      }
+    },
+    "apiEvalRequest": {
+      "type": "object",
+      "properties": {
+        "userID": {
+          "type": "string"
         },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
+        "experiments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/elwinstorageExperiment"
           }
         }
       }
@@ -72,42 +100,8 @@
         "experiments": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/apiExperiment"
+            "$ref": "#/definitions/elwinapiExperiment"
           }
-        }
-      }
-    },
-    "apiGetReply": {
-      "type": "object",
-      "properties": {
-        "experiments": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/apiExperiment"
-          }
-        },
-        "group": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/apiExperimentList"
-          }
-        }
-      }
-    },
-    "apiGetRequest": {
-      "type": "object",
-      "properties": {
-        "userID": {
-          "type": "string"
-        },
-        "requirements": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/apiRequirement"
-          }
-        },
-        "by": {
-          "type": "string"
         }
       }
     },
@@ -121,17 +115,6 @@
         "NOT_IN"
       ],
       "default": "EXISTS"
-    },
-    "apiParam": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      }
     },
     "apiRequirement": {
       "type": "object",
@@ -149,6 +132,151 @@
           }
         }
       }
+    },
+    "elwinapiExperiment": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/elwinapiParam"
+          }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "elwinapiGetReply": {
+      "type": "object",
+      "properties": {
+        "experiments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/elwinapiExperiment"
+          }
+        },
+        "group": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/apiExperimentList"
+          }
+        }
+      }
+    },
+    "elwinapiGetRequest": {
+      "type": "object",
+      "properties": {
+        "userID": {
+          "type": "string"
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiRequirement"
+          }
+        },
+        "by": {
+          "type": "string"
+        }
+      }
+    },
+    "elwinapiParam": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "elwinstorageExperiment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/elwinstorageParam"
+          }
+        },
+        "segments": {
+          "$ref": "#/definitions/storageSegments"
+        },
+        "detailName": {
+          "type": "string"
+        }
+      },
+      "title": "Experiment structure"
+    },
+    "elwinstorageParam": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/storageValue"
+        }
+      },
+      "title": "Param structure"
+    },
+    "storageSegments": {
+      "type": "object",
+      "properties": {
+        "len": {
+          "type": "string",
+          "format": "int64"
+        },
+        "b": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "storageValue": {
+      "type": "object",
+      "properties": {
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "weights": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "title": "Value structure"
     }
   }
 }

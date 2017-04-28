@@ -1,5 +1,5 @@
 {
-    "memo": "22a89ae5ccf3ee157626731580a4426f20cac09edc5c24a9e7a29d892c376af4",
+    "memo": "b8884e532dcdbfc603017857bb8492cd7685008727b364bc039944bf85a94cf1",
     "projects": [
         {
             "name": "github.com/beorn7/perks",
@@ -19,8 +19,8 @@
         },
         {
             "name": "github.com/foolusion/elwinprotos",
-            "branch": "master",
-            "revision": "af9ae3e99c2c87721ae18b172211399c86644c92",
+            "branch": "elwin-eval",
+            "revision": "75afd9ef178b5fe8096b96cf2c53a931bc249d6d",
             "packages": [
                 "elwin",
                 "storage"
@@ -55,7 +55,7 @@
         {
             "name": "github.com/golang/protobuf",
             "branch": "master",
-            "revision": "2bba0603135d7d7f5cb73b2125beeda19c09f4ef",
+            "revision": "18c9bb3261723cd5401db4d0c9fbc5c3b6c70fe8",
             "packages": [
                 "jsonpb",
                 "proto",
@@ -251,7 +251,7 @@
         {
             "name": "google.golang.org/grpc",
             "branch": "master",
-            "revision": "b610ffd3f8786563002bd5b6a9951d56f64a4921",
+            "revision": "fc5d3552288c7a756f99551b3b2540c85d9908ce",
             "packages": [
                 ".",
                 "codes",

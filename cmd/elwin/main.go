@@ -318,6 +318,35 @@ func appendToGroup(br map[string]*elwin.ExperimentList, e choices.ExperimentResp
 	br[group].Experiments = elist
 }
 
+func (e *elwinServer) Eval(ctx context.Context, r *elwin.EvalRequest) (*elwin.EvalReply, error) {
+	out := make([]*elwin.Experiment, len(r.Experiments))
+	for i, e := range r.Experiments {
+		exp := choices.FromExperiment(e)
+		er, err := exp.Eval(r.UserID)
+		if err != nil {
+			switch err {
+			case choices.ErrSegmentNotInExperiment:
+				continue
+			default:
+				return nil, errors.Wrap(err, "could not eval experiment")
+			}
+		}
+		out[i] = &elwin.Experiment{
+			Name:      er.Name,
+			Namespace: er.Namespace,
+			Labels:    er.Labels,
+			Params:    make([]*elwin.Param, len(er.Params)),
+		}
+		for j, p := range er.Params {
+			out[i].Params[j] = &elwin.Param{
+				Name:  p.Name,
+				Value: p.Value,
+			}
+		}
+	}
+	return &elwin.EvalReply{Experiments: out}, nil
+}
+
 func logCloseErr(c io.Closer) {
 	if err := c.Close(); err != nil {
 		log.Printf("could not close response body: %s", err)

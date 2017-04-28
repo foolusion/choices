@@ -209,3 +209,7 @@ func (c *Config) Experiments(userID string, selector labels.Selector) ([]Experim
 	}
 	return response, nil
 }
+
+func (e *Experiment) Eval(userID string) (ExperimentResponse, error) {
+	return e.eval(hashConfig{userID: userID})
+}

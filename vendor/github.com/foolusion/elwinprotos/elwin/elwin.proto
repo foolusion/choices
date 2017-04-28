@@ -4,6 +4,7 @@ package elwin.api;
 
 import "google/api/annotations.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "storage.proto";
 
 option go_package = "github.com/foolusion/elwinprotos/elwin";
 option (gogoproto.goproto_registration) = true;
@@ -12,6 +13,12 @@ service Elwin {
 	rpc Get(GetRequest) returns (GetReply) {
 		option(google.api.http) = {
 			post: "/elwin/v1/experiments"
+			body: "*"
+		};
+	}
+	rpc Eval(EvalRequest) returns (EvalReply) {
+		option(google.api.http) = {
+			post: "/elwin/v1/eval"
 			body: "*"
 		};
 	}
@@ -26,6 +33,15 @@ message GetRequest {
 message GetReply {
 	repeated Experiment experiments = 1;
 	map<string, ExperimentList> group = 2;
+}
+
+message EvalRequest {
+	string userID = 1;
+	repeated storage.Experiment experiments = 2;
+}
+
+message EvalReply {
+	repeated Experiment experiments = 1;
 }
 
 message Requirement {
