@@ -58,7 +58,7 @@ func (e *experiment) experimentHandler(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	var data elwin.GetRequest
 	if err := dec.Decode(&data); err != nil {
-		http.Error(w, "could not parse json", http.StatusBadRequest)
+		http.Error(w, "could not parse json: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
